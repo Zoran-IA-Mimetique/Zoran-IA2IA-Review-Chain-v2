@@ -1,4 +1,10 @@
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Version](https://img.shields.io/badge/version-v2.0-blue)
+
 # Zoran-IA2IA-Review-Chain v2
+
+Hub IA↔IA Zoran v2 : PoC concret (FastAPI-ready), EthicChain guard, glyphes JSON standardisés, 100 scénarios de tests.
 
 **Licence**: MIT • **Contact**: tabary01@gmail.com • **Date**: 2025-08-27T21:36:12Z
 
