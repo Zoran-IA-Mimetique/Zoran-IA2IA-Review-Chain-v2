@@ -1,37 +1,54 @@
-openapi: 3.0.3
+openapi: "3.0.1"
 info:
-  title: Zoran IA2IA Hub API (PoC v2)
-  version: 2.0.0
+  title: Zoran IA2IA Hub API
+  version: "1.0.0"
 paths:
-  /health:
+  /inject:
+    post:
+      summary: Injecte une charge universelle (JSON, CSV, XML…)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UniversalManifest'
+      responses:
+        "200":
+          description: ID d’interaction généré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  interaction_id:
+                    type: string
+  /audit/{id}:
     get:
-      summary: Health check
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        '200':
-          description: OK
-  /glyphs/validate:
-    post:
-      summary: Validate a glyph against its schema
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Validation result
-  /messages:
-    post:
-      summary: Submit a message guarded by EthicChain
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Message accepted
-        '403':
-          description: Blocked by EthicChain
+        "200":
+          description: Historique complet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  events: { type: array, items: { type: object } }
+components:
+  schemas:
+    UniversalManifest:
+      type: object
+      description: Manifest pivot géné par ZUP
+      properties:
+        id: { type: string }
+        type: { type: string, enum: ["UniversalManifest"] }
+        payload: { type: object }
+        source: { type: string }
+        extra: { type: object }
+      required: ["type", "payload"]

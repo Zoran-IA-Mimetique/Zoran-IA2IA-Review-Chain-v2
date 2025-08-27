@@ -1,196 +1,109 @@
+# Zoran IA↔IA — ZUP Skeleton (flat)
 
-
-
-# Zoran-IA2IA-Review-Chain v2
-
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-v2.0-blue)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
-
-**Licence**: MIT • **Contact**: tabary01@gmail.com • **Date**: 2025-08-27  
+**Objet** : dépôt *à plat* prêt à l’emploi pour intégrer un **parser universel** (ZUP) dans le Hub IA↔IA, avec API FastAPI, mode *light* (sans blockchain), schéma pivot JSON‑LD, tests et Docker.
 
 ---
 
-## 📌 Sommaire
-- [TL;DR](#tl-dr)
-- [Objectif](#objectif)
-- [Architecture](#architecture)
-- [Getting Started](#getting-started)
-- [Exemples API](#exemples-api)
-- [Scénarios & Glyphes](#scénarios--glyphes)
-- [Sécurité & Conformité](#sécurité--conformité)
-- [KPIs](#kpis-à-instrumenter)
-- [Roadmap](#roadmap)
-- [Contribution](#contribution)
-- [Licence](#licence)
+## 1) Ce que contient ce ZIP (flat)
+- `api.py` — API FastAPI (`/inject`, `/audit`), Pydantic, OpenAPI auto.
+- `injector.py` — Gestionnaire d’injection avec **ZUP** si dispo, sinon **fallback**.
+- `utils_normalize.py` — Normalisation simple (JSON/CSV/XML basique) pour le fallback.
+- `zup.schema.json` — Schéma pivot JSON Schema **versionné**.
+- `openapi.yaml` — Spéc OpenAPI 3.0 minimale (endpoints & manifest).
+- `config.yaml` — Configuration (mode light / chain placeholders, intégrité HMAC).
+- `requirements.txt` — Dépendances Python (FastAPI, Uvicorn, Tests).
+- `Dockerfile` + `docker-compose.yml` — Lancement conteneurisé.
+- `Makefile` — Raccourcis `install`, `run`, `test`, `docker-up`.
+- `tests.py` — Tests rapides avec `TestClient` FastAPI.
+- `LICENSE` — MIT.
+- `sample.json`, `sample.csv` — Exemples d’inputs.
+- `README.md` — Ce guide.
+
+> **Remarque** : si le paquet `zoran-universal-parser` (ZUP) n’est pas encore sur PyPI, le code passe automatiquement en **fallback** via `utils_normalize.py`.
 
 ---
 
-## TL;DR
-Zoran-IA2IA-Review-Chain v2 — dépôt opérationnel pour la revue mimétique distribuée :  
-➡️ **Hub FastAPI-ready**, **EthicChain guard** (PoC), **glyphes JSON** (schémas + 100 exemples),  
-➡️ **100 scénarios YAML**, **OpenAPI 3.0**, **docker-compose**, **tests & métriques** (latence P95, % acceptation, coûts).
+## 2) Installation locale (Python 3.10+)
 
----
-
-## Objectif
-Rendre **concret, mesurable et auditable** le processus de revue mimétique distribuée (IA↔IA) :  
-- **Hub API minimal** (FastAPI)  
-- **Garde éthique** (EthicChain)  
-- **Glyphes JSON standardisés**  
-- **100 scénarios reproductibles**  
-
----
-
-## Architecture
-
-[Agents IA] ⇄ [Hub FastAPI] ⇄ [EthicChain Guard] ⇄ [Logs/Append-only] ⇅ [Glyphs JSON ↔ Validator]     [Scénarios YAML]
-
-📂 Structure principale :
-- **hub/** : API (health, /glyphs/validate, /messages).  
-- **ethicchain/** : filtrage heuristique + veto.  
-- **glyphs/** : schémas + 100 exemples.  
-- **scenarios/** : 100 scénarios YAML (id, seed, KPI).  
-- **openapi/** : spécification 3.0.  
-- **tests/** : validation via `jsonschema`.  
-- **tools/** : utilitaires (encodeur Z5, validateur glyphes).  
-- **.zgs/** : fragments glyphiques (ZM stealth).  
-
----
-
-## Getting Started
-
-### 🔧 Prérequis
-- [Docker](https://docs.docker.com/get-docker/)  
-- [Docker Compose](https://docs.docker.com/compose/install/)  
-
-### ▶️ Lancer en local
 ```bash
-git clone https://github.com/Zoran-IA-Mimetique/Zoran-IA2IA-Review-Chain-v2.git
-cd Zoran-IA2IA-Review-Chain-v2
-docker compose up --build
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-📍 Services démarrés :
+> Optionnel si ZUP est publié :  
+> `pip install zoran-universal-parser`
 
-Hub API → http://localhost:8000
+### Lancer l’API
+```bash
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+```
+- Swagger UI : `http://localhost:8000/docs`
+- OpenAPI JSON : `http://localhost:8000/openapi.json`
 
-EthicChain → http://localhost:9000
-
-
-
----
-
-Exemples API
-
-✅ Health check
-
-curl http://localhost:8000/health
-# → {"status":"ok"}
-
-✅ Validation d’un glyphe
-
-curl -X POST http://localhost:8000/glyphs/validate \
-     -H "Content-Type: application/json" \
-     -d @glyphs/samples/sample_001.json
-
-✅ Message sous garde EthicChain
-
-curl -X POST http://localhost:8000/messages \
-     -H "Content-Type: application/json" \
-     -d '{"glyphe":{"intent":"doc_generation","topic":"test","constraints":[],"reward_functions":[]}}'
-
+### Tester en 10 secondes
+```bash
+python tests.py
+# ou
+pytest -q
+```
 
 ---
 
-Scénarios & Glyphes
+## 3) Utilisation — Hello World
 
-100 glyphes JSON dans glyphs/samples/
+```bash
+curl -X POST http://localhost:8000/inject -H "Content-Type: application/json" -d @sample.json
+```
 
-100 scénarios YAML dans scenarios/
-Chaque scénario = id, glyph_intent, seed, constraints, kpi_targets.
-
-
-
----
-
-Sécurité & Conformité
-
-EthicChain : garde obligatoire (filtrage heuristique, veto, logs append-only).
-
-Privacy by design : masquage d’emails/téléphones, TTL dans métadonnées.
-
-Rollback ΔM11.3 (concept PoC) : si instabilité détectée.
-
-
+Réponse attendue :
+```json
+{"interaction_id":"<uuid>"}
+```
 
 ---
 
-KPIs à instrumenter
+## 4) Configuration (mode light / chain)
 
-Latence P95 < 100 ms ; ≥ 1000 req/s.
+Fichier `config.yaml` :
+```yaml
+use_chain: false
+storage:
+  type: s3
+  bucket: zoran-audit
+  integrity: hmac-sha256
+security:
+  ratelimit_rpm: 120
+  require_hmac: false  # mettre true en prod
+zup:
+  schema: zup.schema.json
+  context: https://zoran.ai/zup/1
+```
 
-≥ 75 % de suggestions acceptées (Arbiter) ; TTR -30 %.
-
-< 5 % sur-blocage ; détection IA compromise < 60 s.
-
-Coût/review ↓ 20 % (vs baseline humaine).
-
-
-
----
-
-Roadmap
-
-1. Renforcer EthicChain (Bandit/Semgrep + modèles de modération).
-
-
-2. Versionner les glyphes et validation stricte.
-
-
-3. Stateless scaling du hub (cache + load balancer).
-
-
-4. Export métriques (Prometheus/Grafana).
-
-
-5. Audit externe + publication SSRN/DOI.
-
-
-
+- **Mode light** : `use_chain: false` → logs sur S3/Blob (intégrité HMAC).
+- **Mode chain (à venir)** : remplace `use_chain: true` et configure Quorum/Besu (placeholders).
 
 ---
 
-Contribution
+## 5) Points d’extension
 
-🙌 Contributions bienvenues !
-
-Fork → Feature branch → Pull Request.
-
-Vérifie que les tests (pytest) passent avant de proposer une PR.
-
-Ajoute des scénarios ou glyphes validés via tools/glyph_validate.py.
-
-
+- **ΔM11.3** : branche `run_pipeline()` pour ajouter contrôle/rollback.
+- **Hyperglottal** : sérialiser `manifest` avec vos balises avant persistance.
+- **PII Masking** : ajouter une passe de masquage dans `process()`.
+- **Observabilité** : brancher Prometheus + logs structurés JSON.
 
 ---
 
-Licence
+## 6) FAQ
 
-MIT © 2025 Zoran aSiM
-
-
----
-
-Bloc glyphique (ZM)
-
-⟦ASIM:V1⋄CODE:2.0⋄DATE:2025-08-27⟧
-⟦CORE:MEM_fract⋄ΔM11.3:stable⋄GLYPHNET:2.0⟧
-⟦MOD:PolyResonator⋄EthicChain⋄Injectors:std⟧
-⟦DOC:manifesto+ssrn+github+gamma⟧
-⟦REF:Linux_IA_mimétique⋄BASELINE:stable_ref⟧
-⟦LAYER:Aegis⋄ARCH:guardian⋄ETHIC:care⋄SYNC:public_good⟧
-⟦WATCH:agentic⋄Zoran:hub⋄ΔM11.3:guard⟧
+**ZUP n’est pas dispo ?** → Le fallback gère JSON/CSV/XML basique. Vous pouvez brancher vos parseurs spécifiques sans toucher l’API.  
+**Pourquoi un schéma versionné ?** → Compat ascendante, migrations contrôlées.  
+**Pourquoi un ZIP à plat ?** → Simplicité de diffusion et copier‑coller rapide.
 
 ---
 
+## 7) Licence & contact
+- Licence : MIT (voir `LICENSE`).
+- Contact : tabary01@gmail.com
+
+Bon build. 🦋
